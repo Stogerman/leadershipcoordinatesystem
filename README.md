@@ -1,6 +1,6 @@
 # Führungstheorien im dreidimensionalen Raum
 
-Interaktives 3D-Koordinatensystem der im MBA FHNW (Vertiefung Leadership 2026) präsentierten Führungstheorien.
+Interaktives 3D-Koordinatensystem der im MBA FHNW präsentierten Führungstheorien (nach Buchkapiteln).
 
 - **X – Leader**: Fokus auf die Führungskraft
 - **Y – Follower**: Fokus auf die Geführten
@@ -20,4 +20,4 @@ Neben den neun präsentierten Theorien zeigt die App die vier weiteren Theorieka
 Grundlage: Rybnikova & Lang, *Aktuelle Führungstheorien und -konzepte*, 2. Aufl., Springer Gabler 2021.
 Einordnung, Anwendungsfelder, kritische Würdigung und Paradigma folgen den jeweiligen Buchkapiteln.
 Die Koordinaten sind eine Einschätzung auf dieser Basis; Texte und Werte zu «Partizipative und geteilte Führung»
-stammen von der Präsentationsfolie der Gruppe.
+stammen von der Präsentationsfolie.
