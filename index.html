@@ -226,7 +226,7 @@ ol.theories {
 .drawer {
   position: fixed;
   top: 0; right: 0; bottom: 0;
-  width: min(720px, 100%);
+  width: min(860px, 100%);
   background: var(--bg);
   box-shadow: var(--shadow);
   z-index: 11;
@@ -327,6 +327,23 @@ ol.theories {
 .dominance strong { font: 800 1.2rem/1.25 var(--f-display); display: block; }
 .dominance p { margin: 6px 0 0; font-size: .85rem; opacity: .9; }
 
+.criteria-block { grid-column: 1 / -1; }
+.crit-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.crit-head h3 { margin: 0; }
+.crit-head .link-btn { margin: 0; }
+.crit-intro { font-size: .85rem; color: var(--muted); margin: 6px 0 12px !important; }
+.crit-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.crit-col h4 { margin: 0 0 6px; font: 700 .85rem/1.3 var(--f-display); display: flex; justify-content: space-between; gap: 8px; }
+.crit-col .why { font-size: .82rem; color: var(--muted); margin: 0 0 8px; }
+.crit-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.crit-col label { display: grid; grid-template-columns: 18px 34px minmax(0, 1fr); gap: 6px; align-items: start; font-size: .82rem; line-height: 1.3; padding: 3px 4px; border-radius: 3px; cursor: pointer; }
+.crit-col label:hover { background: var(--bg); }
+.crit-col input { margin: 1px 0 0; }
+.crit-col code { font: 500 .75rem/1.5 var(--f-data); }
+.crit-col label.off { color: var(--muted); }
+.crit-col label.off strong { font-weight: 400; }
+.crit-col label small { display: block; color: var(--muted); font-size: .76rem; }
+@media (max-width: 900px) { .crit-grid { grid-template-columns: minmax(0, 1fr); } }
 details.adjust summary {
   cursor: pointer;
   font: 700 .78rem/1.2 var(--f-display);
@@ -414,7 +431,7 @@ footer {
       </div>
       <ol class="theories" id="list-extra"></ol>
     </div>
-    <p class="note">Werte 0–10 = Gewicht des Fokus. Inhalte nach Rybnikova &amp; Lang, <em>Aktuelle Führungstheorien und -konzepte</em>, 2. Aufl. 2021. Die Koordinaten sind eine Einordnung auf Basis des Buchs und lassen sich pro Theorie anpassen.</p>
+    <p class="note">Werte 0–10 = Anzahl erfüllter Bewertungskriterien pro Achse (K1–K10 Leader, F1–F10 Follower, X1–X10 Kontext). Bewertet auf Basis von Rybnikova &amp; Lang, <em>Aktuelle Führungstheorien und -konzepte</em>, 2. Aufl. 2021; im Detailfenster anpassbar.</p>
   </aside>
 </main>
 
@@ -469,22 +486,58 @@ footer {
         <strong id="d-dom-label"></strong>
         <p id="d-dom-why"></p>
       </div>
-      <div class="block plain">
-        <details class="adjust" id="adjust">
-          <summary>Koordinaten anpassen</summary>
-          <div class="sliders">
-            <label for="sx">X — Leader <input class="sx" id="sx" type="range" min="0" max="10" step="1"><span id="sx-v"></span></label>
-            <label for="sy">Y — Follower <input class="sy" id="sy" type="range" min="0" max="10" step="1"><span id="sy-v"></span></label>
-            <label for="sz">Z — Kontext <input class="sz" id="sz" type="range" min="0" max="10" step="1"><span id="sz-v"></span></label>
-            <button type="button" class="link-btn" id="reset">Auf Ausgangswerte zurücksetzen</button>
-          </div>
-        </details>
+    </div>
+    <div class="block plain criteria-block">
+      <div class="crit-head">
+        <h3>Bewertung nach Kriterien</h3>
+        <button type="button" class="link-btn" id="reset" hidden>Auf Ausgangsbewertung zurücksetzen</button>
       </div>
+      <p class="crit-intro">Jeder Achsenwert ist die Anzahl der erfüllten Kriterien (je 10 pro Achse). Häkchen setzen oder entfernen, um die Einordnung anzupassen.</p>
+      <div class="crit-grid" id="d-crit"></div>
     </div>
   </div>
 </section>
 
 <script>
+const CRITERIA = {
+  x: [
+    ["K1", "Eigenschaftsfokus", "Persönlichkeit, Charakter oder Kompetenz des Leaders ist zentrale Erklärungsvariable"],
+    ["K2", "Verhaltenszentrierung", "Führungsstil und Handlungen der Führungsperson bestimmen den Führungserfolg"],
+    ["K3", "Vision & Inspiration", "Leader generiert und kommuniziert Zukunftsbilder unabhängig von Followern"],
+    ["K4", "Machtquelle", "Führungsmacht liegt primär beim Leader (Expertenmacht, Referenzmacht, Charisma)"],
+    ["K5", "Entscheidungshoheit", "Leader trifft Schlüsselentscheidungen mit minimalem Follower-Input"],
+    ["K6", "Einflussrichtung", "Top-down-Beeinflussung dominiert die Führungskonzeption"],
+    ["K7", "Idealtypisierung", "Theorie beschreibt den ‹idealen Führenden› oder Vorbildfunktion"],
+    ["K8", "Selektionsperspektive", "Theorie impliziert Auswahl oder Entwicklung von Führungspersonen"],
+    ["K9", "Kausalattribution", "Erfolg und Misserfolg werden primär dem Leader zugeschrieben"],
+    ["K10", "Individuelle Analyse-Einheit", "Leader-Individuum (nicht Gruppe) als Hauptuntersuchungsebene"]
+  ],
+  y: [
+    ["F1", "Kognitive Aktivität", "Wahrnehmung, Schemata oder Erwartungen der Follower sind zentral"],
+    ["F2", "Aktive Mitgestaltung", "Follower ko-konstruieren aktiv Führungsprozesse oder -ergebnisse"],
+    ["F3", "Bedürfnisorientierung", "Motivationen, Werte und Bedürfnisse der Geführten sind Theoriekern"],
+    ["F4", "Attributionsmacht", "Follower verleihen dem Leader Legitimität (soziale Konstruktion von Führung)"],
+    ["F5", "Heterogenität", "Theorie differenziert zwischen verschiedenen Follower-Typen oder -Gruppen"],
+    ["F6", "Bottom-up-Einfluss", "Geführte beeinflussen Leader-Verhalten oder Führungsprozesse aktiv"],
+    ["F7", "Rückkopplungsschleife", "Follower-Reaktionen verändern das Führungsverhalten iterativ"],
+    ["F8", "Entwicklungsperspektive", "Theorie fokussiert auf Follower-Wachstum, -Reife oder -Befähigung"],
+    ["F9", "Wohlbefinden", "Follower-Zufriedenheit oder -Wohlbefinden ist explizites Theorieziel"],
+    ["F10", "Kollektive Handlungsfähigkeit", "Follower können kollektiv Führung übernehmen oder verweigern"]
+  ],
+  z: [
+    ["X1", "Situative Moderation", "Kontext moderiert die Wirkung von Führungsverhalten (Wenn-dann-Logik)"],
+    ["X2", "Strukturelle Einbettung", "Organisationsstruktur, Hierarchie oder Ressourcen formen Führung"],
+    ["X3", "Kulturelle Prägung", "Nationale oder organisationale Kulturen bestimmen Führungserwartungen"],
+    ["X4", "Technologische Mediation", "Technologien, Medien oder digitale Räume prägen Führungsprozesse"],
+    ["X5", "Substitution", "Strukturen, Normen oder Aufgaben ersetzen oder neutralisieren Führung"],
+    ["X6", "Zeitlichkeit", "Historische Entwicklung oder situativer Wandel ist konstitutiver Theoriebestandteil"],
+    ["X7", "Macht-Kontext", "Politische oder mikropolitische Strukturen und Institutionen prägen Führung"],
+    ["X8", "Gesellschaftlich-normative Rahmung", "Gesellschaftliche Normen, Gesetze oder Werte sind zentral"],
+    ["X9", "Räumliche Distanz", "Geographische Trennung oder Virtualität ist theoriekonstituierendes Merkmal"],
+    ["X10", "Krisenkontext", "Aussergewöhnliche Situationen (Krise, Wandel) als Aktivierungsbedingung"]
+  ]
+};
+
 const THEORIES = [
   {
     id: "neocharisma",
@@ -494,7 +547,9 @@ const THEORIES = [
     presented: true,
     chapter: 2, pages: "21–56", kind: "Führungstheorie",
     paradigm: "Zwischen funktionalistischem und interpretativem Paradigma",
-    x: 9, y: 6, z: 3, qualifier: "personenzentriert",
+    crit: { x: ["K1", "K2", "K3", "K4", "K6", "K7", "K8", "K9", "K10"], y: ["F1", "F3", "F4", "F5", "F8"], z: ["X1", "X10"] },
+    why: { x: "Die Führungsperson mit ihren Eigenschaften (Dominanz, Selbstvertrauen), ihrem Verhalten, ihrer Vision und Vorbildwirkung erklärt den Erfolg; Auswahl und Training setzen bei ihr an. Nicht erfüllt: Entscheidungshoheit, die nicht Kern des Konzepts ist.", y: "Charisma muss von den Geführten wahrgenommen und zugeschrieben werden; ihre Motive, ihr Selbstkonzept und ihre Entwicklung sind Ziel der Transformation, die Wirkung variiert je nach Mitarbeitenden. Kein Bottom-up-Einfluss, keine kollektive Führung.", z: "Kontext tritt nur als begünstigende Situation auf, vor allem grundlegender Wandel und Krisen. Laut Kritik verbleibt das Konzept im psychologischen Mikrokosmos, Kultur und Institutionen fehlen." },
+    qualifier: "personenzentriert",
     theory: "Sammelbegriff für die charismatische und die transformationale Führung, die seit Ende der 70er-Jahre einen dominanten Strang der empirischen Führungsforschung bilden. Sie markieren eine Rückkehr zur Führungsperson: Eigenschaften (Dominanz, Selbstvertrauen, Einflussstreben, Wertüberzeugung) und Verhalten (Vision, Inspiration, Vorbild, individuelle Zuwendung, intellektuelle Stimulierung) sollen bei den Geführten höhere Motive und Engagement über normale Tauschbeziehungen hinaus wecken. Neu gegenüber klassischen Ansätzen: Charisma muss von den Geführten wahrgenommen und zugeschrieben werden. Kontextfaktoren wie grundlegender organisationaler Wandel begünstigen diese Zuschreibung.",
     authors: "Weber (Charisma), House (1977), Burns (1978), Bass (1985), Conger & Kanungo (1987), Shamir et al. (1993)",
     fields: "Führungskräfteauswahl (Persönlichkeitstests, Assessment-Center mit Blick auf Überzeugungs- und Visionsfähigkeit, Stellenausschreibungen), Führungskräfteentwicklung und -training (Rhetorik, Impression Management, Trainings transformationaler Führung nach Bass) sowie Führungsleitbilder und Führungsgrundsätze, etwa Yukls Leitlinien: klare Vision kommunizieren, zuversichtlich handeln, Vertrauen ausdrücken, durch Vorbild führen.",
@@ -508,7 +563,9 @@ const THEORIES = [
     presented: true,
     chapter: 7, pages: "181–222", kind: "Führungstheorien",
     paradigm: "Verteilte Führung: interpretativ (Praxisansatz); Residualfaktor: radikal-strukturalistisch; Substitute: funktionalistisch",
-    x: 2, y: 6, z: 9, qualifier: "strukturell",
+    crit: { x: ["K8"], y: ["F2", "F5", "F6", "F9", "F10"], z: ["X1", "X2", "X3", "X4", "X5", "X7", "X8"] },
+    why: { x: "Die Führungsperson wird relativiert oder ersetzt. Einzig die Empfehlung, Manager mit Erfahrung in verteilter Führung auszuwählen bzw. zu entwickeln, setzt bei ihr an.", y: "Führung verteilt sich auf Gruppenmitglieder (informelle Führung, Selbstführung, selbststeuernde Gruppen); Merkmale der Mitarbeitenden wirken als Substitute; Zufriedenheit ist explizite Zielgrösse der Substitutionstheorie.", z: "Kern des Kapitels: Strukturen, Routinen, Managementsysteme, Kultur und IuK führen mit oder ersetzen Führung (Substitute/Neutralisatoren als Moderatoren); der Residualansatz deutet Führung als Herrschaft und soziale Kontrolle neben Sozialisation." },
+    qualifier: "strukturell",
     theory: "Das Kapitel bündelt drei Ansätze, die den Einfluss der Führungsperson relativieren. Verteilte Führung: Führung vollzieht sich über viele Instanzen und Medien (informelle, strukturelle, kulturelle, virtuelle Führung, Selbstführung), die die personale Führung ergänzen. Führung als Residualfaktor (Türk 1981): Personale Führung füllt nur noch Konformitätslücken, die andere Mechanismen sozialer Kontrolle wie Sozialisation, Technik und Organisation hinterlassen. Führungssubstitute (Kerr & Jermier 1978): Merkmale der Mitarbeiter, der Aufgabe und der Organisation können Führung ersetzen, neutralisieren oder überflüssig machen.",
     authors: "Gronn (2002), Spillane (2006), Bolden (2011), Harris (2013); Türk (1981); Kerr & Jermier (1978), Howell et al. (1990), Dionne et al. (2005)",
     fields: "Schulleitung (z. B. «Annenberg Distributed Leadership Project», Philadelphia), Hochschulen, Gesundheits- und Sozialwesen, Kommunalpolitik, Netzwerke und professionelle Dienstleister. Bei Substituten: Gestaltung von Anreizsystemen, Aufgabenbereicherung, professionelle Auswahl und Weiterbildung, Handlungsspielräume, selbststeuernde Gruppen und Aufgaben mit automatischem Feedback statt Verhaltensänderung der Führungskraft.",
@@ -522,7 +579,9 @@ const THEORIES = [
     presented: true,
     chapter: 13, pages: "385–432", kind: "Führungsphänomen",
     paradigm: "Im Buch nicht explizit verortet",
-    x: 6, y: 5, z: 9, qualifier: "medial-technologisch",
+    crit: { x: ["K1", "K2", "K7", "K8"], y: ["F2", "F6", "F10"], z: ["X1", "X2", "X3", "X4", "X6", "X9"] },
+    why: { x: "Die Umsetzungsliteratur stellt Kompetenzen und Verhalten der Führungskraft ins Zentrum (Kommunikation, Vertrauensaufbau, Rollenmodell) und leitet daraus Entwicklungsprogramme ab.", y: "Emergente und geteilte Führung in virtuellen Teams; Teams erhalten durch Informationszugang mehr Einfluss- und Kontrollmöglichkeiten.", z: "Konstitutiv sind Technologie und räumliche Distanz; dazu situative Medienwahl, veränderte Organisationsformen, kulturelle Distanz und die digitale Transformation als zeitlicher Wandel." },
+    qualifier: "medial-technologisch",
     theory: "Führung von Mitarbeitenden mittels Informations- und Kommunikationstechnologien und sozialer Medien, wenn diese räumlich und zeitlich verteilt arbeiten. Mit Medien wird trotz physischer Abwesenheit der Führungskraft geführt. Das Buch unterscheidet sechs Perspektiven: Führung aus der Distanz, E-Leadership (Avolio et al.: über Technologie vermittelter sozialer Einfluss), digitale Führung zur Ermöglichung der Transformation, Führung mit neuen Beziehungen, emergente Führung sowie geteilte und transformationale Führung im Umgang mit Paradoxien. Kommunikation und Vertrauen gelten als zentrale Voraussetzungen.",
     authors: "Avolio, Kahai & Dodge (2000), Avolio et al. (2014), Hertel et al. (2005), Eichenberg (2007), Hoch & Kozlowski (2014), Van Wart et al. (2019); Media Richness: Daft & Lengel (1986)",
     fields: "Führung virtueller und hybrider Teams und Projekte, Homeoffice (besonders 2020/21 in der Pandemie), Kompetenzentwicklung von Führungskräften (Kommunikation aus der Distanz, Vertrauensaufbau, Fortschrittskontrolle, Work-Life-Balance), situationsgerechte Medienwahl nach Media-Richness- und Mediensynchronizitätstheorie sowie Phasenmodelle virtueller Teams (Vorbereitung, Start, Leistung, Teamentwicklung, Auflösung).",
@@ -536,7 +595,9 @@ const THEORIES = [
     presented: true,
     chapter: 5, pages: "127–150", kind: "Führungstheorie",
     paradigm: "Radikaler Humanismus",
-    x: 8, y: 7, z: 2, qualifier: "unbewusst-relational",
+    crit: { x: ["K1", "K4", "K7", "K8", "K10"], y: ["F1", "F2", "F3", "F4", "F7"], z: [] },
+    why: { x: "Persönlichkeitstypen und Narzissmus der Führungskraft (Jung, Maccoby), die Führungsperson als Ich-Ideal der Gruppe, Instrumente zur Auswahl und Selbsterkenntnis; das Individuum ist Analyseeinheit.", y: "Die Gruppe erhebt die Führungsperson durch Projektion zum Ich-Ideal (Emergenz der Führung); Bedürfnisse, Triebe und Übertragung/Gegenübertragung prägen die Beziehung.", z: "Kein Kriterium erfüllt: Die Kritik im Buch bemängelt genau, dass organisationale Rahmenbedingungen, Strukturen und Kulturen unberücksichtigt bleiben." },
+    qualifier: "unbewusst-relational",
     theory: "Die Perspektive geht von unbewussten psychischen Prozessen aus, die das Führungsgeschehen stark prägen, und stellt dem rationalen Menschenbild Emotionen, Triebe und Konflikte entgegen. Führung entsteht über Massenphänomene: Die Gruppe setzt die Führungsperson an die Stelle ihres Ich-Ideals (Freud, projektive Identifizierung). Zugleich werden Führungsbeziehungen aus frühen Kindheitserfahrungen erklärt, die am Arbeitsplatz reproduziert werden (Transaktionsanalyse: Eltern-, Erwachsenen-, Kind-Ich). Persönlichkeitstypen der Führungskraft (Jung, Maccoby, Neuberger & Kompa) und Narzissmus stehen im Zentrum.",
     authors: "Freud (1921), Le Bon, Jung, Berne (Transaktionsanalyse), Maccoby (1979), Kets de Vries & Miller (1984), Neuberger & Kompa",
     fields: "Transaktionsanalyse in Führungs- und Beratungspraxis zur Analyse von Konflikten in Führungsbeziehungen, Persönlichkeitsinstrumente wie der Myers-Briggs-Typenindikator für Auswahl und Teamzusammenstellung, Maccoby-Fragebogen und Narzissmus-Diagnosen zur Selbsterkenntnis von Führungskräften sowie kritische Analyse des Führungsalltags.",
@@ -550,7 +611,9 @@ const THEORIES = [
     presented: true,
     chapter: 14, pages: "433–470", kind: "Führungsphänomen",
     paradigm: "Alle vier Paradigmen vertreten (z. B. «think manager – think male»: interpretativ; Kanter: radikal-strukturalistisch)",
-    x: 7, y: 4, z: 8, qualifier: "gesellschaftlich-strukturell",
+    crit: { x: ["K1", "K2", "K7", "K8", "K10"], y: ["F1", "F4"], z: ["X2", "X3", "X6", "X7", "X8", "X10"] },
+    why: { x: "Eigenschaften und «weiblicher Führungsstil», Rollenbilder als Verhaltensvorschrift, Auswahl- und Mentoringprogramme; laut Kritik dominiert die individualistische Perspektive.", y: "Stereotype der Beurteilenden («think manager – think male») und Rolleninkongruenz entscheiden über Legitimität und Akzeptanz weiblicher Führungskräfte.", z: "Strukturelle Barrieren (Token-Status, Teilzeit), Organisationskultur, historische Entwicklung seit der Frauenbewegung, Machtbeteiligung, Quotengesetze und gesellschaftliche Normen; die gläserne Klippe verknüpft Führungsübernahme mit Krisen." },
+    qualifier: "gesellschaftlich-strukturell",
     theory: "Keine eigene Führungstheorie, sondern ein Forschungsgegenstand: die Unterrepräsentanz von Frauen in Führungspositionen. Erklärungsansätze reichen vom ökonomischen Kapital über die «gekennzeichnete Frau» und Token-Effekte (Kanter 1977), die Theorie der Rolleninkongruenz (Eagly & Karau 2002) und die implizite Geschlechterquote bis zu gesellschaftlichen Konstruktionen: Frauen als Ressource, als «andere» Führungspersonen, «weibliche Führung» (Rosener 1990). Hinzu kommen die gläserne Decke, die gläserne Klippe (Ryan & Haslam 2005) und die Wirkung gesetzlicher Geschlechterquoten.",
     authors: "Kanter (1977), Schein (1973), Rosener (1990), Eagly & Karau (2002), Ryan & Haslam (2005), Krell et al. (2011), Smith & Parrotta (2018)",
     fields: "Nahezu alles hat unmittelbare Anwendungsrelevanz, bis zu gesetzlichen Geschlechterquoten. Gesellschaftlich: Kinderbetreuung, Enttabuisierung familienbedingter Unterbrüche. Organisational: gendersensible Kriterien für Auswahl, Beurteilung und Entlohnung, Vereinbarkeit, flexible Arbeitszeiten auch in oberen Etagen, Mentoring- und Karriereprogramme, frauensensible Kultur. Individuell: faire Verteilung häuslicher Pflichten. Dazu kritische Reflexion des Führungsalltags.",
@@ -564,7 +627,9 @@ const THEORIES = [
     presented: true,
     chapter: 6, pages: "151–180", kind: "Führungstheorie und -konzept",
     paradigm: "Eher strukturalistisch und humanistisch; kollaborierende Führung funktionalistisch",
-    x: 4, y: 9, z: 5, qualifier: "kollektiv",
+    crit: { x: ["K2", "K4", "K7", "K8"], y: ["F1", "F2", "F3", "F5", "F6", "F7", "F8", "F9", "F10"], z: ["X1", "X2", "X3", "X6", "X8"] },
+    why: { x: "Partizipatives bzw. ermächtigendes Führungsverhalten, Beteiligung, die die Führungskraft einräumt, ein normatives Führungsideal und Trainingsansätze für geteilte Führung.", y: "Hohe Follower-Werte auf nahezu allen F-Kriterien: Ko-Konstruktion, wechselseitiger Einfluss, Empowerment, Partizipationserwartungen, Zufriedenheit, kollektive Führung. Einzig Attributionsmacht ist nicht zentral.", z: "Der Kontext entscheidet, ob geteilt werden kann: Teamreife, Aufgabe, Struktur, Kulturen mit geringer Machtdistanz, Wertewandel und institutionelle Mitbestimmung." },
+    qualifier: "kollektiv",
     theory: "Geteilte Führung ist die konsequenteste Dezentralisierung von Führung auf Follower-Ebene. Die formale Führungskraft verliert ihre Monopolstellung. Hohe Follower-Werte auf nahezu allen F-Kriterien; der Kontext entscheidet, ob geteilt werden kann (Teamreife, Aufgabe, Struktur).",
     authors: "Lewin et al. (1939), Vroom & Yetton (1973), Pearce & Conger (2003), Carson, Tesluk & Marrone (2007); Empowerment: Spreitzer (1995), Houghton & Yoho (2005)",
     fields: "Selbstorganisierte Teams (Agile, Scrum), holokratische Organisationsformen, Genossenschaften, wissenschaftliche Forschungsgruppen, Start-ups.",
@@ -579,7 +644,9 @@ const THEORIES = [
     presented: true,
     chapter: 4, pages: "87–126", kind: "Führungstheorie",
     paradigm: "Interpretativ (sozialkonstruktivistisch); quantitative Forschung führt teils zurück zum Funktionalismus",
-    x: 3, y: 10, z: 5, qualifier: "wahrnehmungsbasiert",
+    crit: { x: ["K7", "K8", "K9"], y: ["F1", "F2", "F4", "F5", "F6", "F7"], z: ["X1", "X3", "X6"] },
+    why: { x: "Nur indirekt: Prototypen beschreiben den «idealen Führenden», Führungserwartungen fliessen in Auswahl und Training ein, Erfolge werden romantisierend der Führung zugerechnet.", y: "Kern der Theorie: Wahrnehmung und Schemata der Geführten konstruieren Führung und verleihen Legitimität; Erwartungen variieren nach Kultur und Gruppen, steuern Akzeptanz und Wirksamkeit und passen sich in dynamischen Modellen laufend an.", z: "Kulturell geprägte implizite Führungstheorien (GLOBE), situative Aktivierung von Prototypen und historisch verankerte, kollektive Führungsvorstellungen." },
+    qualifier: "wahrnehmungsbasiert",
     theory: "Ein kognitiver Ansatz: Implizite Führungstheorien sind Alltagstheorien, also Annahmen über Führungskräfte und Geführte, den Führungskontext, typische Situationen, den Verlauf von Führungsprozessen und erwartete Ergebnisse. Führung ist damit eine kognitive Wissensstruktur des Beobachters und liegt «im Auge des Betrachters». Entspricht eine Person dem Prototyp, wird ihr Führung zugeschrieben. Diese Erwartungen beeinflussen Akzeptanz und Wirksamkeit von Führung stark und sind kulturell geprägt (GLOBE: kulturell geteilte implizite Führungstheorien).",
     authors: "Eden & Leviatan (1975), Calder (1977), Lord & Maher (1991), Meindl et al. (1985), Epitropaki & Martin (2004), House et al. (2004, GLOBE)",
     fields: "Reflexive Personalführung: wechselseitige Erwartungen klären und kommunizieren (gut umsetzbar mit kooperativer oder geteilter Führung). Personalauswahl: Führungserwartungen der Nachgeordneten einbeziehen, Mitwirkung von Mitarbeitenden bei der Auswahl. Bildung, Training und Coaching, die an vorhandene Führungsbilder anknüpfen. Interkulturelles Management und Vorbereitung von Expatriates.",
@@ -593,7 +660,9 @@ const THEORIES = [
     presented: true,
     chapter: 15, pages: "471–506", kind: "Führungsphänomen",
     paradigm: "Überwiegend funktionalistisch; GLOBE mit konstruktivistischen Elementen",
-    x: 8, y: 3, z: 9, qualifier: "kulturell-global",
+    crit: { x: ["K1", "K2", "K7", "K8", "K10"], y: ["F1", "F5"], z: ["X1", "X2", "X3", "X4", "X6", "X8", "X9"] },
+    why: { x: "Eigenschaften, Kompetenzen und Global Mindset der Führungskraft, universell geschätzte Merkmale, Auswahl und globales Talentmanagement; laut Kritik liegt der Fokus auf den Führungskräften.", y: "Kulturell unterschiedliche Führungserwartungen und multikulturelle Teams; globale Mitarbeitende und Geführte finden laut Buch kaum Beachtung.", z: "Der globale Kontext ist konstitutiv: Kultur als Moderator, transnationale Organisationsformen, globale virtuelle Teams, Globalisierung als Entwicklung, institutionelle Kontexte, grenzüberschreitende Distanz." },
+    qualifier: "kulturell-global",
     theory: "Globale Führung ist der Prozess, Denken, Einstellungen und Verhalten von Individuen, Gruppen und Organisationen in einem globalen Kontext zu beeinflussen, um gemeinsame Ziele zu erreichen. Sie umfasst grenzüberschreitende Aktivitäten globaler Manager, etwa als Expatriates oder als Führende multikultureller und globaler Teams. Untersucht werden einerseits universelle Führungseigenschaften und -verhaltensweisen (GLOBE), andererseits die Fähigkeit, mit unterschiedlichen kulturellen Konstruktionen von Führung umzugehen: Global Mindset, Kompetenzmodelle, Führungserwartungen und -prozesse.",
     authors: "Hofstede (1980), House et al. (2004, GLOBE), Javidan et al. (2006), Mendenhall et al. (2018), Osland & Bird (2018)",
     fields: "Personalauswahl für globale Führungspositionen anhand von Kompetenzmodellen, Führung globaler Teams, Führungskräfteentwicklung und Training zur Vorbereitung auf Auslandseinsätze, globales Talentmanagement, systematische Gestaltung des Expatriate-Einsatzes (inkl. familiärem Umfeld) und Wissensmanagement in multinationalen Unternehmen.",
@@ -607,7 +676,9 @@ const THEORIES = [
     presented: true,
     chapter: 11, pages: "307–354", kind: "Führungstheorien",
     paradigm: "Studien mehrheitlich funktionalistisch; kritische (radikal-humanistische) Zugänge selten",
-    x: 8, y: 6, z: 5, qualifier: "normativ",
+    crit: { x: ["K1", "K2", "K4", "K6", "K7", "K8", "K10"], y: ["F5", "F6", "F9"], z: ["X1", "X2", "X3", "X6", "X8", "X10"] },
+    why: { x: "Ethische Führungskraft als «moral person» und Vorbild, destruktive Führer mit Persönlichkeitsstörungen und Machtmissbrauch; Verstärkung und Kommunikation wirken top-down, Auswahl und Training setzen bei der Person an.", y: "Das toxische Dreieck kennt empfängliche Geführte (Konformisten, Kollaborateure), der Einfluss der Geführten wird als Faktor modelliert; das Wohlbefinden der Geführten ist Teil der Definition destruktiver Führung.", z: "Begünstigende Umwelt, Unsicherheit und Bedrohung, ethisches Klima und Kultur, Führungssysteme der Organisation sowie gesellschaftlich und historisch geprägte Massstäbe für «gut» und «schlecht»." },
+    qualifier: "normativ",
     theory: "Zwei Pole guter und schlechter Führung. Ethische Führung: Die Führungskraft zeigt normativ angemessenes Verhalten im persönlichen Handeln und in Beziehungen und fördert es bei den Nachgeordneten durch Zwei-Weg-Kommunikation, Verstärkung und Entscheidungsverhalten (Brown, Treviño & Harrison 2005). Sie setzt ein ethisches Klima voraus. Destruktive Führung: systematisches, wiederholtes Verhalten, das legitime Interessen der Organisation schädigt und/oder Motivation, Wohlbefinden und Zufriedenheit der Geführten untergräbt (Einarsen et al. 2007). Das «toxische Dreieck» (Padilla et al. 2007) bezieht empfängliche Geführte und ein begünstigendes Umfeld ein.",
     authors: "Brown, Treviño & Harrison (2005), Kuhn & Weibler (2012), Tepper (2000), Einarsen, Aasland & Skogstad (2007), Padilla, Hogan & Kaiser (2007), Krasikova et al. (2013)",
     fields: "Ethikbewusste Gestaltung von Führungssystemen nach Kuhn & Weibler: ethische Führung proklamieren, Auswahl, Beurteilung, Honorierung und Entwicklung reformieren, integritätsorientierte Führungskultur aufbauen. Instrumente: Ethikgrundsätze, Ethikaudits, Ethik-Kommissionen, Sanktionen, Ethik-Trainings mit Fallstudien und Rollenspielen, Prüfung moralischer Urteilsfähigkeit bei der Auswahl. Vorsicht bei Zielvorgaben, die unethisches Verhalten legitimieren können.",
@@ -621,7 +692,9 @@ const THEORIES = [
     presented: false,
     chapter: 3, pages: "57–86", kind: "Führungstheorie",
     paradigm: "Funktionalistisch",
-    x: 7, y: 7, z: 3, qualifier: "dyadisch",
+    crit: { x: ["K1", "K2"], y: ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F9"], z: ["X6"] },
+    why: { x: "Kompetenz und Konformität bringen Idiosynkrasiekredit, die Zuwendung der Führungskraft prägt die Beziehung. Ansonsten steht die Dyade, nicht die Person im Zentrum.", y: "Gegenseitiger Austausch und Einfluss, Gruppe verleiht Kredit, Innen- und Aussengruppe, subjektive Wahrnehmung der Beziehungsqualität, Entwicklung über Phasen, Folgen für Zufriedenheit und Fluktuation.", z: "Einzig die zeitliche Entwicklung der Beziehung ist konstitutiv; soziale und kulturelle Einflüsse wurden laut Kritik lange ausgeblendet." },
+    qualifier: "dyadisch",
     theory: "Beziehungsorientierte Perspektive: Führung wird als sozialer Austausch materieller und immaterieller Ressourcen zwischen Führungskraft und Mitarbeiter verstanden, mit gegenseitiger Beeinflussung. Zentrale Ansätze sind das Idiosynkrasiekredit-Modell (Hollander), der Leader-Member-Exchange-Ansatz mit Innen- und Aussengruppe und Entwicklungsphasen einer Führungsbeziehung sowie die beziehungsorientierte Führungstheorie (Uhl-Bien 2006). Mitarbeitende erhalten eine führungskonstituierende Rolle.",
     authors: "Hollander (1958, 1978), Graen & Uhl-Bien (1995), Uhl-Bien (2006)",
     fields: "Kaum in Trainings verbreitet, vor allem in der Forschung. In der Praxis: Selbst- und Fremdreflexion der Führungsbeziehung, Sensibilisierung für den Zusammenhang zwischen Beziehungsqualität und Organisationserfolg (Kündigungen, Engagement) sowie für Innen- und Aussenseiter in Arbeitsgruppen, Diagnose mit LMX-Skalen.",
@@ -635,7 +708,9 @@ const THEORIES = [
     presented: false,
     chapter: 8, pages: "223–256", kind: "Führungstheorie",
     paradigm: "Radikaler Strukturalismus",
-    x: 6, y: 7, z: 5, qualifier: "machtbasiert",
+    crit: { x: ["K1", "K2", "K4"], y: ["F2", "F3", "F6", "F7", "F10"], z: ["X1", "X2", "X7"] },
+    why: { x: "Machtquellen und Einflusstaktiken der Führungskraft, politische Geschicklichkeit als Eigenschaft (laut Kritik eine Renaissance der Eigenschaftstheorie).", y: "Mitarbeitende sind strategische Akteure mit eigenen Interessen und Machtquellen, beeinflussen Vorgesetzte (Führung von unten), leisten Widerstand; die Machtbalance verschiebt sich wechselseitig.", z: "Mikropolitische Machtstrukturen und situative Machtbalance; strukturelle und gesellschaftliche Machtzusammenhänge bleiben laut Kritik unterbelichtet." },
+    qualifier: "machtbasiert",
     theory: "Führung wird als wechselseitige Einflussnahme in einer strukturellen und situativen Machtbalance gesehen. Führungskraft und Mitarbeitende verfügen jeweils über Machtquellen und setzen Strategien und Einflusstaktiken ein, um Interessen zu sichern. Dazu gehören auch Führung von unten und die politische Geschicklichkeit von Führungskräften.",
     authors: "Neuberger (1995, 2006), Crozier & Friedberg (1979), Türk (1989), Yukl (2013)",
     fields: "Hinweise für Mitarbeitende, wie sie Interessen durch Einfluss wahrnehmen können (Führung von unten), Leitlinien für Führungskräfte zum Umgang mit Machtquellen und Einflusstaktiken sowie Etablierung legitimer Ordnungen und Spielregeln wie Führungsleitbilder, Führungsgrundsätze und Ethik-Kodizes.",
@@ -649,7 +724,9 @@ const THEORIES = [
     presented: false,
     chapter: 9, pages: "257–282", kind: "Führungstheorie",
     paradigm: "Interpretativ (mit funktionalistischen Elementen)",
-    x: 7, y: 6, z: 6, qualifier: "sinnstiftend",
+    crit: { x: ["K2", "K3", "K4", "K6"], y: ["F1", "F2", "F3"], z: ["X1", "X2", "X3", "X10"] },
+    why: { x: "Symbolisches Handeln, Visionen und Sinnstiftung durch die Führungskraft, Ringen um Deutungshoheit; instrumentelle Varianten steuern Mitarbeitende top-down.", y: "Mitarbeitende deuten und stiften selbst Sinn, ihr Bedürfnis nach Sinn ist Ansatzpunkt.", z: "Symbolisierte Führung in Strukturen und Unternehmenskultur; besonders relevant in Krisen, Wandel und Unsicherheit." },
+    qualifier: "sinnstiftend",
     theory: "Im Fokus steht sinnbezogenes Handeln: Visionen, Symbole, Zeremonien und Rituale, vor allem aber die Deutung und Umdeutung von Fakten in Organisationen. Neuberger unterscheidet symbolisierende Führung (durch die Führungskraft) und symbolisierte Führung, die in Strukturen, Systemen und Kultur festgeronnen ist. Weitere Ansätze: Sinnstiftung (Smircich & Morgan), institutionelle Führung (Selznick), bedeutungs- und sinnorientierte Führung.",
     authors: "Selznick (1957), Smircich & Morgan (1982), Neuberger (1994), van Knippenberg (2020)",
     fields: "Krisen und Situationen, die strategischen oder Identitätswandel erfordern, Unsicherheit über Ziele und Mittel, in der traditionelle Steuerung versagt, Kontexte, in denen Konsens, Commitment und Loyalität zählen oder Kollektive angesprochen werden, sowie kritische Reflexion des Führungsalltags.",
@@ -663,7 +740,9 @@ const THEORIES = [
     presented: false,
     chapter: 12, pages: "355–384", kind: "Führungstheorie (kritischer Ansatz)",
     paradigm: "Mythen: zwischen interpretativ und radikal-strukturalistisch; Romantik: interpretativ",
-    x: 3, y: 7, z: 8, qualifier: "diskursiv-gesellschaftlich",
+    crit: { x: ["K7", "K9"], y: ["F1", "F2", "F4", "F5"], z: ["X3", "X7", "X8", "X10"] },
+    why: { x: "Heldenmythos und Archetypen sowie die Zuschreibung von Erfolg und Misserfolg an Führungskräfte sind Gegenstand, werden aber kritisch analysiert.", y: "Führung ist eine Zuschreibung und Konstruktion durch Mitarbeitende und Beobachter; die Neigung zur Romantisierung unterscheidet sich zwischen Personen.", z: "Gesellschaftliche Werte (Rationalitäts-, Erfolgsmythos), Herrschafts- und Legitimationsfunktion von Mythen; Krisen und extreme Leistungen verstärken die Romantisierung." },
+    qualifier: "diskursiv-gesellschaftlich",
     theory: "Führung wird als soziale Konstruktion verstanden, die von Führungskräften, Mitarbeitenden, Medien und Forschenden aufrechterhalten wird. Führungsmythen sind gesellschaftlich akzeptierte Aussagensysteme, die Führung über Werte legitimieren und Komplexität reduzieren (Neuberger). Die Romantik der Führung (Meindl et al. 1985) bezeichnet die Neigung, Erfolge und Misserfolge allein den Führungskräften zuzuschreiben, ein Ausdruck des Heldenmythos.",
     authors: "Meindl et al. (1985), Meindl & Ehrlich (1987), Neuberger (1995, 2002), Kubicek (1984), Bligh & Schyns (2007)",
     fields: "Rein analytisch: kritische Hinterfragung von Aussagen über Führung in Theorien, Medien und Unternehmensdokumenten, Entmythologisierung von Führungsgrundsätzen (Kubicek), Archetypen als Reflexionsmittel in der Führungsweiterbildung sowie Dekonstruktion impliziter Machtverhältnisse.",
@@ -671,20 +750,22 @@ const THEORIES = [
   }
 ];
 
-/* ---------- state ---------- */
-const STORE_KEY = "fuehrung3d.coords.v2";
-const BASE = Object.fromEntries(THEORIES.map(t => [t.id, { x: t.x, y: t.y, z: t.z }]));
+/* ---------- state: coordinates = number of fulfilled criteria per axis ---------- */
+const STORE_KEY = "fuehrung3d.criteria.v1";
+const AXES = ["x", "y", "z"];
+const BASE = Object.fromEntries(THEORIES.map(t => [t.id, JSON.parse(JSON.stringify(t.crit))]));
+function score(t) { AXES.forEach(k => { t[k] = t.crit[k].length; }); }
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
-  THEORIES.forEach(t => { if (saved[t.id]) Object.assign(t, saved[t.id]); });
+  THEORIES.forEach(t => { if (saved[t.id]) t.crit = saved[t.id]; });
 } catch (e) {}
+THEORIES.forEach(score);
+const sameSet = (a, b) => a.length === b.length && a.every(v => b.includes(v));
+const isChanged = t => AXES.some(k => !sameSet(t.crit[k], BASE[t.id][k]));
 function persist() {
   try {
     const out = {};
-    THEORIES.forEach(t => {
-      const b = BASE[t.id];
-      if (t.x !== b.x || t.y !== b.y || t.z !== b.z) out[t.id] = { x: t.x, y: t.y, z: t.z };
-    });
+    THEORIES.forEach(t => { if (isChanged(t)) out[t.id] = t.crit; });
     localStorage.setItem(STORE_KEY, JSON.stringify(out));
   } catch (e) {}
 }
@@ -693,7 +774,7 @@ const AX = { x: "Leader", y: "Follower", z: "Kontext" };
 function dominance(t) {
   const vals = [["x", t.x], ["y", t.y], ["z", t.z]].sort((a, b) => b[1] - a[1]);
   if (vals[0][1] === vals[1][1]) {
-    return { key: "mix", label: `Mischform (${AX[vals[0][0]]} / ${AX[vals[1][0]]})`,
+    return { key: "mix", label: `Mischform ${AX[vals[0][0]]} / ${AX[vals[1][0]]} (${t.qualifier})`,
       why: `${AX[vals[0][0]]} und ${AX[vals[1][0]]} sind gleich stark gewichtet (je ${vals[0][1]}/10).` };
   }
   const gap = vals[0][1] - vals[1][1];
@@ -1028,20 +1109,40 @@ function fillDrawer() {
     coords.appendChild(row);
   });
   const b = BASE[t.id];
-  const changed = b.x !== t.x || b.y !== t.y || b.z !== t.z;
-  $("d-vector").textContent = `(X ${t.x} | Y ${t.y} | Z ${t.z})` + (changed ? `  · angepasst, Ausgangswert (${b.x} | ${b.y} | ${b.z})` : "");
+  const changed = isChanged(t);
+  $("d-vector").textContent = `(X ${t.x} | Y ${t.y} | Z ${t.z})` + (changed ? `  · angepasst, Ausgangswert (${b.x.length} | ${b.y.length} | ${b.z.length})` : "");
   $("d-dom").style.background = C[d.key];
   $("d-dom-label").textContent = d.label;
   $("d-dom-why").textContent = d.why;
-  ["x", "y", "z"].forEach(k => { $("s" + k).value = t[k]; $("s" + k + "-v").textContent = t[k]; });
   $("reset").hidden = !changed;
+  const grid = $("d-crit"); grid.innerHTML = "";
+  AXES.forEach(k => {
+    const col = document.createElement("div"); col.className = "crit-col";
+    col.innerHTML = `<h4 style="color:${C[k]}"><span>${k.toUpperCase()} — ${AX[k]}</span><span>${t[k]}/10</span></h4><p class="why"></p><ul></ul>`;
+    col.querySelector(".why").textContent = t.why[k] + (changed && !sameSet(t.crit[k], b[k]) ? " (Bewertung angepasst)" : "");
+    const ul = col.querySelector("ul");
+    CRITERIA[k].forEach(([id, name, text]) => {
+      const on = t.crit[k].includes(id);
+      const li = document.createElement("li");
+      li.innerHTML = `<label class="${on ? "" : "off"}" for="c-${id}"><input type="checkbox" id="c-${id}" style="accent-color:${C[k]}"${on ? " checked" : ""}><code style="color:${C[k]}">${id}</code><span><strong></strong><small></small></span></label>`;
+      li.querySelector("strong").textContent = name;
+      li.querySelector("small").textContent = text;
+      li.querySelector("input").addEventListener("change", e => {
+        const list = current.crit[k].filter(v => v !== id);
+        if (e.target.checked) list.push(id);
+        current.crit[k] = CRITERIA[k].map(c => c[0]).filter(c => list.includes(c));
+        score(current); persist(); fillDrawer(); renderList(); draw();
+        const again = $("c-" + id); if (again) again.focus();
+      });
+      ul.appendChild(li);
+    });
+    grid.appendChild(col);
+  });
 }
-["x", "y", "z"].forEach(k => $("s" + k).addEventListener("input", e => {
-  if (!current) return;
-  current[k] = +e.target.value;
-  persist(); fillDrawer(); renderList(); draw();
-}));
-$("reset").addEventListener("click", () => { Object.assign(current, BASE[current.id]); persist(); fillDrawer(); renderList(); draw(); });
+$("reset").addEventListener("click", () => {
+  current.crit = JSON.parse(JSON.stringify(BASE[current.id]));
+  score(current); persist(); fillDrawer(); renderList(); draw();
+});
 function stepTheory(dir) {
   const order = [...THEORIES].sort((a, b) => a.chapter - b.chapter);
   const i = order.indexOf(current);

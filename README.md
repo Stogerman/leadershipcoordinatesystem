@@ -8,7 +8,9 @@ Interaktives 3D-Koordinatensystem der im MBA FHNW präsentierten Führungstheori
 
 Jede Theorie ist ein Punkt. Ein Klick auf den Punkt (oder auf die Liste) öffnet die Details:
 theoretische Einordnung, Anwendungsfelder, kritische Würdigung, genaue Koordinaten und Dominanz.
-Die Koordinaten lassen sich pro Theorie mit Schiebereglern anpassen (lokal im Browser gespeichert).
+Die Koordinaten ergeben sich aus 30 Bewertungskriterien (K1–K10 Leader, F1–F10 Follower, X1–X10 Kontext):
+Jeder Achsenwert ist die Anzahl der erfüllten Kriterien. Im Detailfenster lassen sich die Kriterien pro Theorie
+an- und abhaken (lokal im Browser gespeichert).
 
 ## Starten
 
@@ -19,5 +21,5 @@ Neben den neun präsentierten Theorien zeigt die App die vier weiteren Theorieka
 
 Grundlage: Rybnikova & Lang, *Aktuelle Führungstheorien und -konzepte*, 2. Aufl., Springer Gabler 2021.
 Einordnung, Anwendungsfelder, kritische Würdigung und Paradigma folgen den jeweiligen Buchkapiteln.
-Die Koordinaten sind eine Einschätzung auf dieser Basis; Texte und Werte zu «Partizipative und geteilte Führung»
+Die Bewertung der Kriterien ist eine Einschätzung auf dieser Basis; Texte und Werte zu «Partizipative und geteilte Führung»
 stammen von der Präsentationsfolie.
