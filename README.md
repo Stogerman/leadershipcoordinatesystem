@@ -14,5 +14,10 @@ Die Koordinaten lassen sich pro Theorie mit Schiebereglern anpassen (lokal im Br
 
 `index.html` im Browser öffnen, kein Build nötig. Die Daten stehen im Array `THEORIES` in `index.html`.
 
-Grundlage: Lang & Rybnikova, *Aktuelle Führungstheorien und -konzepte*. Die Werte sind eine Interpretation;
-die Werte zu «Partizipative und geteilte Führung» stammen aus der Gruppenpräsentation.
+Neben den neun präsentierten Theorien zeigt die App die vier weiteren Theoriekapitel des Buchs
+(Austausch/LMX, Mikropolitik, symbolische Führung, Mythen & Romantik) als hohle Punkte; sie lassen sich ausblenden.
+
+Grundlage: Rybnikova & Lang, *Aktuelle Führungstheorien und -konzepte*, 2. Aufl., Springer Gabler 2021.
+Einordnung, Anwendungsfelder, kritische Würdigung und Paradigma folgen den jeweiligen Buchkapiteln.
+Die Koordinaten sind eine Einschätzung auf dieser Basis; Texte und Werte zu «Partizipative und geteilte Führung»
+stammen von der Präsentationsfolie der Gruppe.
